@@ -16,8 +16,13 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 public class Search {
-    private static void saveFileLongerThenThree(String path, ArrayList<String[]> text) throws FileNotFoundException {
-        PrintWriter printWriter = new PrintWriter(path);
+    private static void saveFileLongerThenThree(String path, ArrayList<String[]> text) {
+        PrintWriter printWriter = null;
+        try {
+            printWriter = new PrintWriter(path);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         for (int i = 0; i < text.size(); i++) {
             for (int j = 0; j < text.get(i).length; j++) {
                 if (text.get(i)[j].length() >= 3) {
@@ -28,21 +33,29 @@ public class Search {
         }
         printWriter.close();
     }
-    private static void saveFile(String url,ArrayList<String> filteredPopularWords) throws FileNotFoundException {
-        PrintWriter printWriter  = new PrintWriter(url);
-        for (int i=0;i<filteredPopularWords.size();i++){
+
+    private static void saveFile(String url, ArrayList<String> filteredPopularWords) {
+        PrintWriter printWriter = null;
+        try {
+            printWriter = new PrintWriter(url);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < filteredPopularWords.size(); i++) {
             printWriter.append(filteredPopularWords.get(i));
         }
         printWriter.close();
     }
 
-    private static void readFile(String url, ArrayList<String> words) throws FileNotFoundException {
+    private static void readFile(String url, ArrayList<String> words) {
         File file = new File(url);
         Scanner scanner = null;
 
+        try {
             scanner = new Scanner(file);
-
-            System.out.println("Problem z otwarciem pliku");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
 
         while (scanner.hasNextLine()) {
@@ -50,41 +63,49 @@ public class Search {
         }
     }
 
-    private static void excludeWords(ArrayList<String> popularWords,String[] excludedWords){
-        for (int i=0; i< excludedWords.length;i++){
-            popularWords.remove(excludedWords[i]+"\n");
+    private static void excludeWords(ArrayList<String> popularWords, String[] excludedWords) {
+        for (int i = 0; i < excludedWords.length; i++) {
+            popularWords.remove(excludedWords[i] + "\n");
         }
     }
 
-    static void selectWords(String url, String cssQuery) {
-        Connection connect = Jsoup.connect(url);
+    static void selectWords(ArrayList<String> urls, String cssQuery) {
+        Connection connect;
+        Document document;
+        Elements links;
         ArrayList<String> popularWords = new ArrayList<>();
         ArrayList<String[]> text = new ArrayList<>();
-        String[] excludedWords = {"oraz", "ponieważ", "gdyż", "jakby", "także", "też", "nie", "tak","pożar","dni"};
+        String[] excludedWords = {"oraz", "ponieważ", "gdyż", "jakby", "także", "też", "nie", "tak"};
         try {
-            Document document = connect.get();
-            Elements links = document.select("span.title");
-            for (Element elem : links) {
-                text.add(elem.text().replaceAll("[^\\wą-żĄ-ŻóÓ ]", " ").split(" "));
+            for (int i = 0; i < urls.size(); i++) {
+                connect = Jsoup.connect(urls.get(i));
+                document = connect.get();
+                links = document.select(cssQuery);
+
+                for (Element elem : links) {
+                    text.add(elem.text().replaceAll("[^\\wą-żĄ-ŻóÓ ]", " ").split(" "));
+                }
+
             }
+
             saveFileLongerThenThree("popular_words.txt", text);
             readFile("popular_words.txt", popularWords);
-            excludeWords(popularWords,excludedWords);
-            System.out.println(popularWords.get(0));
-            saveFile("filtered_popular_words.txt",popularWords);
+            excludeWords(popularWords, excludedWords);
+            saveFile("filtered_popular_words.txt", popularWords);
 
-        }
-        catch (FileNotFoundException e){
-            System.out.println("Problem z otwarciem pliku");
-            e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             e.getMessage();
         }
     }
 
     public static void main(String[] args) {
-        selectWords("http://www.onet.pl/", "span.title");
+        ArrayList<String> urls = new ArrayList<>();
+
+        urls.add("https://www.wp.pl/");
+        urls.add("http://onet.pl/");
+        urls.add("https://www.audanet.pl/cms/pl/web/ax-pl/home/");
+
+        selectWords(urls, "span");
     }
 }

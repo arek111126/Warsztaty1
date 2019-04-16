@@ -25,6 +25,6 @@ public class Main1 {
             System.out.println("wylosowałem " + pom);
         }
 
-        return string.indexOf("-")== -1 ? range+z: range-z;
+        return !string.contains("-") ? range + z : range - z;
     }
 }
